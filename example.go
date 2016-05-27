@@ -1,8 +1,7 @@
 package main
 
 import (
-  "github.com/zombcode/cardamomo"
-  _"../../cardamomo"
+  "../../cardamomo"
 	"fmt"
 	"time"
 )
@@ -185,6 +184,13 @@ func main() {
 
     res.Send("Message \"" + req.GetParam("message", "Default message") + "\" sended to client \"" + req.GetParam("id", "Empty client!") + "\"!");
   })
+
+  // Scripts
+  scripts := cardamomo.NewScripts() // You need this line in order to initialize scripts objects
+
+  scripts.AddScript(func() {
+    fmt.Printf("\n10 seconds! \n");
+  }, 10)
 
   c.Run()
 }
