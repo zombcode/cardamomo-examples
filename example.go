@@ -192,5 +192,14 @@ func main() {
     fmt.Printf("\n10 seconds! \n");
   }, 10)
 
+  scriptDatetime, err := time.Parse("3 04 00 PM", "9 46 00 PM") // This execute task at 9:46 every days
+  fmt.Printf("\n\nTime: %s\n\n", scriptDatetime);
+
+  if err == nil {
+    scripts.AddScriptAtTime(func() {
+      fmt.Printf("\nConcrete time! \n");
+    }, scriptDatetime)
+  }
+
   c.Run()
 }
