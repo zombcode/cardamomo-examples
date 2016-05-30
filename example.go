@@ -1,7 +1,7 @@
 package main
 
 import (
-  "../../cardamomo"
+  "github.com/zombcode/cardamomo"
 	"fmt"
 	"time"
 )
