@@ -9,7 +9,7 @@ import (
 )
 
 func TestServerHandlers(t *testing.T) {
-    go StartExamples(false)
+    go StartExamples(true, false)
     time.Sleep(time.Second * 3)
     fmt.Printf("\n\nStarting tests...\n\n")
 

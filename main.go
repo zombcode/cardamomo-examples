@@ -20,10 +20,10 @@ type BoxSize struct {
 var c cardamomo.Cardamomo
 
 func main() {
-  StartExamples(true)
+  StartExamples(false, true)
 }
 
-func StartExamples(debug bool) error {
+func StartExamples(testing, debug bool) error {
   // HTTP
 
   c = cardamomo.Instance("8000")
@@ -33,7 +33,7 @@ func StartExamples(debug bool) error {
 		res.Writer.Header().Set("Access-Control-Allow-Origin", "*")
     res.Writer.Header().Set("Access-Control-Allow-Headers", "Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Mx-ReqToken,X-Requested-With");
 
-    if debug == true {
+    if testing == false {
       fmt.Printf("Hello!")
     }
 
@@ -140,59 +140,61 @@ func StartExamples(debug bool) error {
 
 	// Sockets
 
-	socket := c.OpenSocket()
-  socket.Cluster(cardamomo.SocketClusterParams{ // You can use this lines for cluster testing
-    Hosts: []cardamomo.SocketClusterHost{ // Write a list of ALL servers included in the cluster
-      cardamomo.SocketClusterHost{
-        Host: "192.168.0.214", // Use the server 1 IP
-        Port: "8000", // Use the server 1 PORT
-        Master: true, // Only ONE server can be MASTER
+  if testing == false {
+  	socket := c.OpenSocket()
+    socket.Cluster(cardamomo.SocketClusterParams{ // You can use this lines for cluster testing
+      Hosts: []cardamomo.SocketClusterHost{ // Write a list of ALL servers included in the cluster
+        cardamomo.SocketClusterHost{
+          Host: "192.168.0.214", // Use the server 1 IP
+          Port: "8000", // Use the server 1 PORT
+          Master: true, // Only ONE server can be MASTER
+        },
+        cardamomo.SocketClusterHost{
+          Host: "192.168.0.214", // Use the server 2 IP
+          Port: "8001", // Use the server 2 PORT
+          Master: false, // Only ONE server can be MASTER
+        },
       },
-      cardamomo.SocketClusterHost{
-        Host: "192.168.0.214", // Use the server 2 IP
-        Port: "8001", // Use the server 2 PORT
-        Master: false, // Only ONE server can be MASTER
-      },
-    },
-    Password: "examplepass",
-  })
-  socket.SendClient("as12df34gh56", "testing", cardamomo.JSONC{"foo":"bar"}); // This is for testing communication between sockets, you can use a real client ID for that
+      Password: "examplepass",
+    })
+    socket.SendClient("as12df34gh56", "testing", cardamomo.JSONC{"foo":"bar"}); // This is for testing communication between sockets, you can use a real client ID for that
 
-	socket.OnSocketBase("/base1", func(client *cardamomo.SocketClient) {
-		fmt.Printf("\n\nBase 1 new client!\n\n")
+  	socket.OnSocketBase("/base1", func(client *cardamomo.SocketClient) {
+  		fmt.Printf("\n\nBase 1 new client!\n\n")
 
-		client.OnSocketAction("onDisconnect", func(sparams map[string]interface{}) {
-			fmt.Printf("\n\nDisconnect!\n\n")
-		})
+  		client.OnSocketAction("onDisconnect", func(sparams map[string]interface{}) {
+  			fmt.Printf("\n\nDisconnect!\n\n")
+  		})
 
-		client.OnSocketAction("action1", func(sparams map[string]interface{}) {
-			fmt.Printf("\n\nAction 1!\n\n")
+  		client.OnSocketAction("action1", func(sparams map[string]interface{}) {
+  			fmt.Printf("\n\nAction 1!\n\n")
 
-			fmt.Printf("\n\nParam: %s\n\n", sparams["param_1"])
-			fmt.Printf("\n\nParam: %s\n\n", sparams["param_2"].(map[string]interface{})["inner_1"])
-			fmt.Printf("\n\nParam: %d\n\n", int(sparams["param_2"].(map[string]interface{})["inner_2"].([]interface{})[1].(float64)))
+  			fmt.Printf("\n\nParam: %s\n\n", sparams["param_1"])
+  			fmt.Printf("\n\nParam: %s\n\n", sparams["param_2"].(map[string]interface{})["inner_1"])
+  			fmt.Printf("\n\nParam: %d\n\n", int(sparams["param_2"].(map[string]interface{})["inner_2"].([]interface{})[1].(float64)))
 
-			client.Send("action1", sparams)
-		})
-	})
+  			client.Send("action1", sparams)
+  		})
+  	})
 
-	c.Get("/socket/broadcast/:message", func(req cardamomo.Request, res cardamomo.Response) {
-		params := make(map[string]interface{})
-		params["message"] = req.GetParam("message", "Default message")
+  	c.Get("/socket/broadcast/:message", func(req cardamomo.Request, res cardamomo.Response) {
+  		params := make(map[string]interface{})
+  		params["message"] = req.GetParam("message", "Default message")
 
-		socket.Send("broadcast", params);
-		socket.SendBase("/base1", "broadcast", params);
-    res.Send("Broadcast \"" + req.GetParam("message", "Default message") + "\" sended!");
-  })
+  		socket.Send("broadcast", params);
+  		socket.SendBase("/base1", "broadcast", params);
+      res.Send("Broadcast \"" + req.GetParam("message", "Default message") + "\" sended!");
+    })
 
-	c.Get("/socket/chat/:id/:message", func(req cardamomo.Request, res cardamomo.Response) {
-		params := make(map[string]interface{})
-		params["message"] = req.GetParam("message", "Default message")
+  	c.Get("/socket/chat/:id/:message", func(req cardamomo.Request, res cardamomo.Response) {
+  		params := make(map[string]interface{})
+  		params["message"] = req.GetParam("message", "Default message")
 
-		socket.SendClient(req.GetParam("id", ""), "chat", params);
+  		socket.SendClient(req.GetParam("id", ""), "chat", params);
 
-    res.Send("Message \"" + req.GetParam("message", "Default message") + "\" sended to client \"" + req.GetParam("id", "Empty client!") + "\"!");
-  })
+      res.Send("Message \"" + req.GetParam("message", "Default message") + "\" sended to client \"" + req.GetParam("id", "Empty client!") + "\"!");
+    })
+  }
 
   // Scripts
   scripts := cardamomo.NewScripts() // You need this line in order to initialize scripts objects
